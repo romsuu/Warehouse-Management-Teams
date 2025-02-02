@@ -47,15 +47,10 @@ $isAdmin = $_SESSION['user']['role_id'] === 1;
 
     <script>
         function showTab(tabId) {
-            // Hide all tab contents
             document.querySelectorAll('.tab-content').forEach(tab => tab.style.display = 'none');
-            // Show the selected tab
             document.getElementById(tabId).style.display = 'block';
         }
-        // Default tab to show on page load
-        document.addEventListener('DOMContentLoaded', () => {
-            showTab('manage-jobs'); // Change default tab if needed
-        });
+        showTab('manage-jobs'); // Default tab
     </script>
 </body>
 </html>
