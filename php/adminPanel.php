@@ -2,6 +2,7 @@
 session_start();
 require_once __DIR__ . '/db.php';
 
+// Check if the user is logged in
 if (!isset($_SESSION['user'])) {
     header("Location: /index.php?error=Please log in first.");
     exit;
