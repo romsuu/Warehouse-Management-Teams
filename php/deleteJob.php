@@ -6,7 +6,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($jobId > 0) {
         $stmt = $conn->prepare("DELETE FROM jobs WHERE id = ?");
-        $stmt->bind_param("i", $jobId);
+        if ($stmt === false) {
+            echo json_encode(['success' => false, 'message' => 'Failed to prepare statement.']);
+            exit;
+        }
+
+        $bind = $stmt->bind_param("i", $jobId);
+        if ($bind === false) {
+            echo json_encode(['success' => false, 'message' => 'Failed to bind parameters.']);
+            exit;
+        }
 
         if ($stmt->execute()) {
             echo json_encode(['success' => true, 'message' => 'Job deleted successfully.']);
