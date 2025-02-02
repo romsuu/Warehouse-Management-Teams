@@ -1,27 +1,16 @@
 <?php
 session_start();
-include 'db.php';
+require_once __DIR__ . '/db.php';
 
 header('Content-Type: application/json');
 
-if (!isset($_SESSION['user'])) {
-    echo json_encode(["success" => false, "message" => "Unauthorized"]);
-    exit;
-}
-
-$team_id = $_SESSION['user']['team_id'];
-
-$stmt = $conn->prepare("SELECT id, employee_name FROM employees WHERE team_id = ?");
-$stmt->bind_param("i", $team_id);
-$stmt->execute();
-$result = $stmt->get_result();
-
+$result = $conn->query("SELECT employees.id, employees.employee_name, teams.team_name FROM employees LEFT JOIN teams ON employees.team_id = teams.id ORDER BY employees.id ASC");
 $employees = [];
+
 while ($row = $result->fetch_assoc()) {
-    $employees[] = ["id" => $row["id"], "name" => $row["employee_name"]];
+    $employees[] = $row;
 }
 
-echo json_encode($employees);
-$stmt->close();
+echo json_encode(["success" => true, "employees" => $employees]);
 $conn->close();
 ?>

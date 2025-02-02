@@ -1,50 +1,58 @@
 <?php
-include '../a2/php/db.php';
+session_start();
+require_once __DIR__ . '/db.php';
 
-header("Access-Control-Allow-Origin: *");
-header("Access-Control-Allow-Methods: GET, POST, OPTIONS");
-header("Access-Control-Allow-Headers: Content-Type");
-header('Content-Type: application/json');
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['jobName'])) {
+        $jobName = trim($_POST['jobName']);
+        $multiplier = floatval($_POST['multiplier']);
 
-$action = $_POST['action'] ?? ($_GET['action'] ?? '');
-
-if ($action === 'get') {
-    $query = "SELECT id, job_name, multiplier FROM jobs";
-    $result = $conn->query($query);
-
-    if (!$result) {
-        echo json_encode(["success" => false, "message" => "Database query failed."]);
+        if (!empty($jobName) && $multiplier > 0) {
+            $stmt = $conn->prepare("INSERT INTO jobs (job_name, multiplier) VALUES (?, ?)");
+            $stmt->bind_param("sd", $jobName, $multiplier);
+            if ($stmt->execute()) {
+                echo json_encode(["success" => true, "message" => "Job added successfully."]);
+            } else {
+                echo json_encode(["success" => false, "message" => "Failed to add job."]);
+            }
+        } else {
+            echo json_encode(["success" => false, "message" => "Invalid job data."]);
+        }
         exit;
     }
 
-    $jobs = [];
-    while ($row = $result->fetch_assoc()) {
-        $jobs[] = $row;
-    }
+    if (isset($_POST['editJobId'])) {
+        $jobId = intval($_POST['editJobId']);
+        $jobName = trim($_POST['editJobName']);
+        $multiplier = floatval($_POST['editMultiplier']);
 
-    echo json_encode(["success" => true, "jobs" => $jobs]);
-    exit;
-}
-
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $action === 'add') {
-    $jobName = trim($_POST['jobName'] ?? '');
-    $multiplier = floatval($_POST['multiplier'] ?? 0);
-
-    if (empty($jobName) || $multiplier <= 0) {
-        echo json_encode(['success' => false, 'message' => 'Invalid input.']);
+        $stmt = $conn->prepare("UPDATE jobs SET job_name = ?, multiplier = ? WHERE id = ?");
+        $stmt->bind_param("sdi", $jobName, $multiplier, $jobId);
+        if ($stmt->execute()) {
+            echo json_encode(["success" => true, "message" => "Job updated successfully."]);
+        } else {
+            echo json_encode(["success" => false, "message" => "Failed to update job."]);
+        }
         exit;
     }
 
-    $stmt = $conn->prepare("INSERT INTO jobs (job_name, multiplier) VALUES (?, ?)");
-    $stmt->bind_param("sd", $jobName, $multiplier);
-
-    if ($stmt->execute()) {
-        echo json_encode(['success' => true, 'message' => 'Job added successfully.']);
-    } else {
-        echo json_encode(['success' => false, 'message' => 'Failed to add job.']);
+    if (isset($_POST['deleteJobId'])) {
+        $jobId = intval($_POST['deleteJobId']);
+        $stmt = $conn->prepare("DELETE FROM jobs WHERE id = ?");
+        $stmt->bind_param("i", $jobId);
+        if ($stmt->execute()) {
+            echo json_encode(["success" => true, "message" => "Job deleted successfully."]);
+        } else {
+            echo json_encode(["success" => false, "message" => "Failed to delete job."]);
+        }
+        exit;
     }
-
-    $stmt->close();
-    exit;
 }
+
+$result = $conn->query("SELECT * FROM jobs");
+$jobs = [];
+while ($job = $result->fetch_assoc()) {
+    $jobs[] = $job;
+}
+echo json_encode(["success" => true, "jobs" => $jobs]);
 ?>
